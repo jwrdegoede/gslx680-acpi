@@ -526,6 +526,7 @@ static int gsl_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	}
 #endif
 	
+#ifdef CONFIG_ACPI
 	if (ACPI_COMPANION(&client->dev)) {
 		/* Wake the device up with a power on reset */
 		error = acpi_bus_set_power(ACPI_HANDLE(&client->dev), ACPI_STATE_D3);
@@ -536,6 +537,7 @@ static int gsl_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 			dev_err(&client->dev, "%s: failed to wake up device through ACPI: %d, continuting anyway\n", __func__, error);
 		}
 	}
+#endif
 	
 	error = request_firmware(&fw, GSL_FW_NAME, &ts->client->dev);
 	if (error < 0) {
@@ -659,8 +661,10 @@ static int __maybe_unused gsl_ts_suspend(struct device *dev)
 	gsl_ts_reset_chip(client);
 	usleep_range(10000, 20000);
 
+#ifdef CONFIG_ACPI
 	/* Do we need to do this ourselves? */
 	acpi_bus_set_power(ACPI_HANDLE(&client->dev), ACPI_STATE_D3);
+#endif
 
 	if (device_may_wakeup(dev)) {
 		ts->wake_irq_enabled = (enable_irq_wake(client->irq) == 0);
@@ -682,8 +686,10 @@ static int __maybe_unused gsl_ts_resume(struct device *dev)
 		disable_irq_wake(client->irq);
 	}
 
+#ifdef CONFIG_ACPI
 	/* Do we need to do this ourselves? */
 	acpi_bus_set_power(ACPI_HANDLE(&client->dev), ACPI_STATE_D0);
+#endif
 	usleep_range(20000, 50000);
 
 	gsl_ts_reset_chip(client);
