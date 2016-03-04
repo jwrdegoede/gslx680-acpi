@@ -538,7 +538,9 @@ static int gsl_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 		}
 	}
 #endif
-	
+
+	gpiod_set_value_cansleep(ts->gpio, 1);
+
 	error = request_firmware(&fw, GSL_FW_NAME, &ts->client->dev);
 	if (error < 0) {
 		dev_err(&client->dev, "%s: failed to load firmware: %d\n", __func__, error);
@@ -661,6 +663,7 @@ static int __maybe_unused gsl_ts_suspend(struct device *dev)
 	gsl_ts_reset_chip(client);
 	usleep_range(10000, 20000);
 
+	gpiod_set_value_cansleep(ts->gpio, 0);
 #ifdef CONFIG_ACPI
 	/* Do we need to do this ourselves? */
 	acpi_bus_set_power(ACPI_HANDLE(&client->dev), ACPI_STATE_D3);
@@ -690,6 +693,7 @@ static int __maybe_unused gsl_ts_resume(struct device *dev)
 	/* Do we need to do this ourselves? */
 	acpi_bus_set_power(ACPI_HANDLE(&client->dev), ACPI_STATE_D0);
 #endif
+	gpiod_set_value_cansleep(ts->gpio, 1);
 	usleep_range(20000, 50000);
 
 	gsl_ts_reset_chip(client);
